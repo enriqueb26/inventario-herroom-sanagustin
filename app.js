@@ -9,10 +9,21 @@ const state = {
   purchases: [],
   usages: [],
 };
+let ticketDraft = null;
 
 const skuForm = document.querySelector("#sku-form");
 const purchaseForm = document.querySelector("#purchase-form");
 const usageForm = document.querySelector("#usage-form");
+const ticketImageInput = document.querySelector("#ticket-image-input");
+const analyzeTicketButton = document.querySelector("#analyze-ticket-button");
+const ticketScanStatus = document.querySelector("#ticket-scan-status");
+const ticketReviewPanel = document.querySelector("#ticket-review-panel");
+const ticketSupplierInput = document.querySelector("#ticket-supplier-input");
+const ticketDateInput = document.querySelector("#ticket-date-input");
+const ticketTotalInput = document.querySelector("#ticket-total-input");
+const ticketReviewBody = document.querySelector("#ticket-review-body");
+const confirmTicketImportButton = document.querySelector("#confirm-ticket-import-button");
+const clearTicketReviewButton = document.querySelector("#clear-ticket-review-button");
 const skuFormTitle = document.querySelector("#sku-form-title");
 const skuSubmitButton = document.querySelector("#sku-submit-button");
 const skuCancelButton = document.querySelector("#sku-cancel-button");
@@ -180,6 +191,42 @@ function bindEvents() {
     await resetAllData();
   });
 
+  analyzeTicketButton.addEventListener("click", async () => {
+    await analyzeTicketImage();
+  });
+
+  confirmTicketImportButton.addEventListener("click", async () => {
+    await confirmTicketImport();
+  });
+
+  clearTicketReviewButton.addEventListener("click", () => {
+    clearTicketDraft();
+  });
+
+  ticketSupplierInput.addEventListener("input", () => {
+    if (!ticketDraft) {
+      return;
+    }
+
+    ticketDraft.supplier = ticketSupplierInput.value.trim();
+  });
+
+  ticketDateInput.addEventListener("input", () => {
+    if (!ticketDraft) {
+      return;
+    }
+
+    ticketDraft.purchasedAt = ticketDateInput.value;
+  });
+
+  ticketTotalInput.addEventListener("input", () => {
+    if (!ticketDraft) {
+      return;
+    }
+
+    ticketDraft.total = Number(ticketTotalInput.value || 0);
+  });
+
   desktopViewButton.addEventListener("click", () => {
     applyViewMode("desktop");
   });
@@ -224,6 +271,15 @@ function bindEvents() {
     if (action === "delete") {
       await deleteItem(itemId);
     }
+  });
+
+  ticketReviewBody.addEventListener("input", (event) => {
+    updateTicketDraftFromReview(event.target);
+  });
+
+  ticketReviewBody.addEventListener("change", (event) => {
+    updateTicketDraftFromReview(event.target);
+    renderTicketReview();
   });
 }
 
@@ -322,6 +378,7 @@ function render() {
   renderInventory();
   renderPurchases();
   renderUsages();
+  renderTicketReview();
   syncAutoSku();
 }
 
@@ -665,6 +722,135 @@ async function handleCsvImport(event, importer) {
   }
 }
 
+async function analyzeTicketImage() {
+  if (!supabaseClient) {
+    notifyMissingConfig();
+    return;
+  }
+
+  const [file] = ticketImageInput.files || [];
+  if (!file) {
+    window.alert("Primero selecciona una imagen del ticket.");
+    return;
+  }
+
+  ticketScanStatus.textContent = "Analizando ticket...";
+
+  try {
+    const imageDataUrl = await fileToDataUrl(file);
+    const response = await fetch("/api/parse-ticket", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        imageDataUrl,
+        existingItems: state.items.map((item) => ({
+          id: item.id,
+          sku: item.sku,
+          name: item.name,
+          category: item.category,
+          unit: item.unit,
+        })),
+      }),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || "No se pudo analizar el ticket.");
+    }
+
+    ticketDraft = {
+      supplier: payload.supplier || "",
+      purchasedAt: payload.purchasedAt || today(),
+      total: Number(payload.total || 0),
+      items: (payload.items || []).map((item, index) => createTicketDraftItem(item, index)),
+    };
+
+    if (!ticketDraft.items.length) {
+      throw new Error("No se detectaron productos utilizables en el ticket.");
+    }
+
+    ticketScanStatus.textContent = `Ticket analizado. Productos detectados: ${ticketDraft.items.length}.`;
+    renderTicketReview();
+  } catch (error) {
+    ticketScanStatus.textContent = error.message;
+    window.alert(error.message);
+  }
+}
+
+async function confirmTicketImport() {
+  if (!ticketDraft || !ticketDraft.items.length) {
+    window.alert("Primero analiza un ticket.");
+    return;
+  }
+
+  try {
+    const createdItemsCache = new Map();
+    const purchaseRows = [];
+
+    for (const draftItem of ticketDraft.items) {
+      if (!draftItem.name.trim()) {
+        throw new Error("Todos los productos del ticket deben tener nombre antes de guardar.");
+      }
+
+      if (!draftItem.quantity || draftItem.quantity <= 0) {
+        throw new Error(`La cantidad de ${draftItem.name} debe ser mayor a 0.`);
+      }
+
+      let itemId = draftItem.selectedItemId;
+
+      if (!itemId) {
+        const cacheKey = `${normalizeText(draftItem.name)}|${draftItem.category}|${draftItem.unit}`;
+        if (createdItemsCache.has(cacheKey)) {
+          itemId = createdItemsCache.get(cacheKey);
+        } else {
+          const insertedItems = await runQuery(
+            supabaseClient.from(SUPABASE_TABLES.items).insert({
+              name: draftItem.name.trim(),
+              sku: getNextSku(),
+              category: draftItem.category,
+              unit: draftItem.unit,
+              minimum_stock: 0,
+            }).select("id"),
+            `No se pudo crear el SKU para ${draftItem.name}.`,
+          );
+
+          itemId = insertedItems[0]?.id;
+          if (!itemId) {
+            throw new Error(`No se pudo crear el SKU para ${draftItem.name}.`);
+          }
+
+          createdItemsCache.set(cacheKey, itemId);
+          await refreshData();
+        }
+      }
+
+      purchaseRows.push({
+        item_id: itemId,
+        quantity: Number(draftItem.quantity),
+        purchased_at: ticketDraft.purchasedAt || today(),
+        supplier: ticketDraft.supplier || "",
+        cost: Number(draftItem.lineTotal || 0),
+      });
+    }
+
+    await runQuery(
+      supabaseClient.from(SUPABASE_TABLES.purchases).insert(purchaseRows),
+      "No se pudo guardar la compra desde ticket.",
+    );
+
+    await refreshData();
+    clearTicketDraft();
+    ticketImageInput.value = "";
+    ticketScanStatus.textContent = "Ticket importado correctamente.";
+    setConnectionMessage("Ticket importado correctamente.", "success");
+  } catch (error) {
+    window.alert(error.message);
+    ticketScanStatus.textContent = error.message;
+  }
+}
+
 async function importItemsFromCsv(rows) {
   const requiredHeaders = ["nombre", "categoria", "unidad", "stock_minimo"];
   validateHeaders(rows.headers, requiredHeaders);
@@ -859,6 +1045,111 @@ function parseCsv(text) {
   return { headers, records };
 }
 
+function renderTicketReview() {
+  if (!ticketDraft || !ticketDraft.items.length) {
+    ticketReviewPanel.classList.add("hidden");
+    ticketReviewBody.innerHTML = "";
+    return;
+  }
+
+  ticketReviewPanel.classList.remove("hidden");
+  ticketSupplierInput.value = ticketDraft.supplier || "";
+  ticketDateInput.value = ticketDraft.purchasedAt || today();
+  ticketTotalInput.value = ticketDraft.total || 0;
+
+  ticketReviewBody.innerHTML = ticketDraft.items
+    .map((item) => {
+      const itemOptions = [
+        `<option value="">Crear SKU nuevo</option>`,
+        ...getItemsSortedBySku().map(
+          (catalogItem) => `<option value="${catalogItem.id}" ${catalogItem.id === item.selectedItemId ? "selected" : ""}>${catalogItem.sku} · ${escapeHtml(catalogItem.name)}</option>`,
+        ),
+      ].join("");
+
+      return `
+        <tr>
+          <td>
+            <input class="ticket-inline-input" data-ticket-field="name" data-ticket-id="${item.id}" value="${escapeHtml(item.name)}" />
+          </td>
+          <td>
+            <input class="ticket-inline-input" data-ticket-field="quantity" data-ticket-id="${item.id}" type="number" min="1" step="1" value="${item.quantity}" />
+          </td>
+          <td>
+            <select class="ticket-inline-select" data-ticket-field="unit" data-ticket-id="${item.id}">
+              ${buildUnitOptions(item.unit)}
+            </select>
+          </td>
+          <td>
+            <select class="ticket-inline-select" data-ticket-field="category" data-ticket-id="${item.id}">
+              ${buildCategoryOptions(item.category)}
+            </select>
+          </td>
+          <td>
+            <select class="ticket-inline-select" data-ticket-field="selectedItemId" data-ticket-id="${item.id}">
+              ${itemOptions}
+            </select>
+          </td>
+          <td>
+            <input class="ticket-inline-input" data-ticket-field="lineTotal" data-ticket-id="${item.id}" type="number" min="0" step="0.01" value="${item.lineTotal || 0}" />
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function createTicketDraftItem(item, index) {
+  const matchedItem = findMatchingItem(item);
+
+  return {
+    id: `ticket-item-${index + 1}`,
+    name: String(item.name || "").trim(),
+    quantity: Math.max(1, Number(item.quantity || 1)),
+    unit: sanitizeUnit(item.unit),
+    category: sanitizeCategory(item.suggestedCategory),
+    selectedItemId: matchedItem?.id || "",
+    lineTotal: Number(item.lineTotal || 0),
+  };
+}
+
+function updateTicketDraftFromReview(target) {
+  if (!(target instanceof HTMLElement) || !ticketDraft) {
+    return;
+  }
+
+  const { ticketId, ticketField } = target.dataset;
+  if (!ticketId || !ticketField) {
+    return;
+  }
+
+  const draftItem = ticketDraft.items.find((item) => item.id === ticketId);
+  if (!draftItem) {
+    return;
+  }
+
+  if (ticketField === "quantity") {
+    draftItem.quantity = Math.max(1, Number(target.value || 1));
+    return;
+  }
+
+  if (ticketField === "lineTotal") {
+    draftItem.lineTotal = Math.max(0, Number(target.value || 0));
+    return;
+  }
+
+  draftItem[ticketField] = String(target.value || "").trim();
+}
+
+function clearTicketDraft() {
+  ticketDraft = null;
+  ticketSupplierInput.value = "";
+  ticketDateInput.value = "";
+  ticketTotalInput.value = "";
+  ticketReviewBody.innerHTML = "";
+  ticketReviewPanel.classList.add("hidden");
+  ticketScanStatus.textContent = "Todavía no has cargado un ticket.";
+}
+
 function validateHeaders(headers, requiredHeaders) {
   requiredHeaders.forEach((header) => {
     if (!headers.includes(header)) {
@@ -937,6 +1228,18 @@ function getItemsSortedBySku() {
   return [...state.items].sort((left, right) => getSkuNumber(left.sku) - getSkuNumber(right.sku));
 }
 
+function findMatchingItem(item) {
+  if (item.matchedSku) {
+    const directMatch = state.items.find((catalogItem) => catalogItem.sku === item.matchedSku);
+    if (directMatch) {
+      return directMatch;
+    }
+  }
+
+  const normalizedIncoming = normalizeText(item.name);
+  return state.items.find((catalogItem) => normalizeText(catalogItem.name) === normalizedIncoming);
+}
+
 function metricCard(value, label) {
   return `<article class="metric"><strong>${value}</strong><span>${label}</span></article>`;
 }
@@ -970,6 +1273,28 @@ function formatUnit(unit) {
   return unitMap[unit] || unit;
 }
 
+function sanitizeCategory(category) {
+  const categories = ["Cafetería", "Insumos", "Materiales"];
+  return categories.includes(category) ? category : "Insumos";
+}
+
+function sanitizeUnit(unit) {
+  const units = ["Kilogramo", "Litro", "Pieza"];
+  return units.includes(unit) ? unit : "Pieza";
+}
+
+function buildCategoryOptions(selectedValue) {
+  return ["Cafetería", "Insumos", "Materiales"]
+    .map((value) => `<option value="${value}" ${value === selectedValue ? "selected" : ""}>${value}</option>`)
+    .join("");
+}
+
+function buildUnitOptions(selectedValue) {
+  return ["Kilogramo", "Litro", "Pieza"]
+    .map((value) => `<option value="${value}" ${value === selectedValue ? "selected" : ""}>${value}</option>`)
+    .join("");
+}
+
 function setTodayDefault(input) {
   input.value = today();
 }
@@ -979,6 +1304,32 @@ function today() {
   const offset = date.getTimezoneOffset();
   const localDate = new Date(date.getTime() - offset * 60_000);
   return localDate.toISOString().slice(0, 10);
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen del ticket."));
+    reader.readAsDataURL(file);
+  });
 }
 
 function createSupabaseClient() {

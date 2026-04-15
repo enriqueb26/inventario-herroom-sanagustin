@@ -43,6 +43,73 @@
       </section>
 
       <main class="layout">
+        <section class="panel panel-wide page-section" data-page="operacion">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Ticket</p>
+              <h2>Importar desde foto de compra</h2>
+            </div>
+          </div>
+
+          <div class="ticket-intake">
+            <p class="helper-text">
+              Toma foto o sube un ticket. La app intentará detectar proveedor, fecha y productos para agregarlos al inventario.
+            </p>
+
+            <div class="ticket-actions">
+              <label class="file-button">
+                Tomar foto o subir ticket
+                <input id="ticket-image-input" type="file" accept="image/*" capture="environment" />
+              </label>
+              <button type="button" id="analyze-ticket-button" class="secondary-button">
+                Analizar ticket
+              </button>
+            </div>
+
+            <p id="ticket-scan-status" class="helper-text">Todavía no has cargado un ticket.</p>
+          </div>
+
+          <div id="ticket-review-panel" class="ticket-review hidden">
+            <div class="ticket-review-top">
+              <label>
+                Proveedor
+                <input id="ticket-supplier-input" type="text" placeholder="Proveedor detectado o manual" />
+              </label>
+              <label>
+                Fecha de compra
+                <input id="ticket-date-input" type="date" />
+              </label>
+              <label>
+                Total del ticket
+                <input id="ticket-total-input" type="number" min="0" step="0.01" />
+              </label>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto detectado</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
+                    <th>Categoría</th>
+                    <th>SKU destino</th>
+                    <th>Costo</th>
+                  </tr>
+                </thead>
+                <tbody id="ticket-review-body"></tbody>
+              </table>
+            </div>
+
+            <div class="ticket-confirm-actions">
+              <button type="button" id="confirm-ticket-import-button">Guardar ticket en inventario</button>
+              <button type="button" id="clear-ticket-review-button" class="secondary-button">
+                Limpiar revisión
+              </button>
+            </div>
+          </div>
+        </section>
+
         <section class="panel page-section" data-page="operacion">
           <div class="section-heading">
             <div>

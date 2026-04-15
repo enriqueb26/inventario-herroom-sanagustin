@@ -255,6 +255,39 @@ select {
   font-size: 0.92rem;
 }
 
+.ticket-intake,
+.ticket-review {
+  display: grid;
+  gap: 14px;
+}
+
+.ticket-actions,
+.ticket-confirm-actions,
+.ticket-review-top {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ticket-review-top label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  min-width: 180px;
+  flex: 1 1 220px;
+}
+
+.ticket-review {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.ticket-inline-input,
+.ticket-inline-select {
+  min-width: 120px;
+}
+
 .import-stack {
   display: grid;
   gap: 14px;
@@ -482,6 +515,12 @@ td {
 
   .page-link {
     flex: 1 1 0;
+  }
+
+  .ticket-actions,
+  .ticket-confirm-actions,
+  .ticket-review-top {
+    flex-direction: column;
   }
 
   .view-switch {
