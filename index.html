@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control de Insumos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Inventario Her Room San Agustín</p>
+        </div>
+      </header>
+
+      <section class="panel status-panel" id="connection-status">
+        Conectando con Supabase...
+      </section>
+
+      <main class="layout">
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Catálogo</p>
+              <h2 id="sku-form-title">Alta de SKU</h2>
+            </div>
+          </div>
+
+          <form id="sku-form" class="stack-form">
+            <input name="itemId" type="hidden" />
+            <label>
+              Nombre del insumo
+              <input name="name" type="text" placeholder="Ej. Vaso 16 oz" required />
+            </label>
+            <label>
+              SKU
+              <input
+                name="sku"
+                type="text"
+                placeholder="Se asigna automáticamente"
+                readonly
+                required
+              />
+            </label>
+            <label>
+              Categoría
+              <select name="category" required>
+                <option value="Cafetería">Cafetería</option>
+                <option value="Insumos">Insumos</option>
+                <option value="Materiales">Materiales</option>
+              </select>
+            </label>
+            <label>
+              Unidad
+              <input name="unit" type="text" placeholder="Ej. piezas, kg, litros" required />
+            </label>
+            <label>
+              Stock mínimo
+              <input name="minimumStock" type="number" min="0" step="1" value="0" required />
+            </label>
+            <div class="form-actions">
+              <button type="submit" id="sku-submit-button">Guardar SKU</button>
+              <button type="button" id="sku-cancel-button" class="secondary-button hidden">
+                Cancelar edición
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Movimientos</p>
+              <h2>Registrar compra</h2>
+            </div>
+          </div>
+
+          <form id="purchase-form" class="stack-form">
+            <label>
+              SKU
+              <select name="itemId" required></select>
+            </label>
+            <label>
+              Cantidad comprada
+              <input name="quantity" type="number" min="1" step="1" required />
+            </label>
+            <label>
+              Fecha de compra
+              <input name="purchasedAt" type="date" required />
+            </label>
+            <label>
+              Proveedor
+              <input name="supplier" type="text" placeholder="Opcional" />
+            </label>
+            <label>
+              Costo total
+              <input name="cost" type="number" min="0" step="0.01" placeholder="Opcional" />
+            </label>
+            <button type="submit">Guardar compra</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Consumo</p>
+              <h2>Registrar salida o agotado</h2>
+            </div>
+          </div>
+
+          <form id="usage-form" class="stack-form">
+            <label>
+              SKU
+              <select name="itemId" required></select>
+            </label>
+            <label>
+              Cantidad usada
+              <input name="quantity" type="number" min="1" step="1" required />
+            </label>
+            <label>
+              Fecha de uso
+              <input name="usedAt" type="date" required />
+            </label>
+            <label>
+              Nota
+              <input name="note" type="text" placeholder="Ej. Producción del lunes" />
+            </label>
+            <button type="submit">Guardar salida</button>
+          </form>
+        </section>
+
+        <section class="panel panel-wide">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Catálogo</p>
+              <h2>Productos registrados</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Insumo</th>
+                  <th>Categoría</th>
+                  <th>Unidad</th>
+                  <th>Stock mínimo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="catalog-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-wide">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Estado actual</p>
+              <h2>Inventario</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Insumo</th>
+                  <th>Stock</th>
+                  <th>Comprado por última vez</th>
+                  <th>Promedio de duración</th>
+                  <th>Agotado</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-wide">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Historial</p>
+              <h2>Compras registradas</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>SKU</th>
+                  <th>Cantidad</th>
+                  <th>Proveedor</th>
+                  <th>Costo</th>
+                </tr>
+              </thead>
+              <tbody id="purchases-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-wide">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Historial</p>
+              <h2>Salidas registradas</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>SKU</th>
+                  <th>Cantidad</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody id="usage-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-wide">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Importación</p>
+              <h2>Carga masiva desde Excel</h2>
+            </div>
+          </div>
+
+          <div class="import-stack">
+            <p class="helper-text">
+              Usa archivos `CSV` compatibles con Excel para importar productos, compras y salidas.
+            </p>
+
+            <div class="import-group">
+              <strong>Alta masiva de SKUs</strong>
+              <a href="./plantilla_skus.csv" download class="link-button">Descargar plantilla</a>
+              <label class="file-button">
+                Seleccionar archivo
+                <input id="import-skus-input" type="file" accept=".csv" />
+              </label>
+            </div>
+
+            <div class="import-group">
+              <strong>Alta masiva de compras</strong>
+              <a href="./plantilla_compras.csv" download class="link-button">Descargar plantilla</a>
+              <label class="file-button">
+                Seleccionar archivo
+                <input id="import-purchases-input" type="file" accept=".csv" />
+              </label>
+            </div>
+
+            <div class="import-group">
+              <strong>Alta masiva de salidas o agotado</strong>
+              <a href="./plantilla_salidas.csv" download class="link-button">Descargar plantilla</a>
+              <label class="file-button">
+                Seleccionar archivo
+                <input id="import-usages-input" type="file" accept=".csv" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel-wide subtle-danger-zone">
+          <button type="button" id="reset-data-button" class="ghost-danger-button">
+            Borrar todo el historial
+          </button>
+        </section>
+      </main>
+    </div>
+
+    <template id="empty-row-template">
+      <tr>
+        <td colspan="6" class="empty-cell">Todavía no hay datos.</td>
+      </tr>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
