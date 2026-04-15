@@ -168,19 +168,23 @@ select {
 
 .import-group {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 12px;
+  padding: 16px;
   align-content: start;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: rgba(255, 253, 248, 0.72);
 }
 
-.import-copy {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.4;
+.import-group strong {
+  font-size: 0.96rem;
+  line-height: 1.25;
+}
+
+.import-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .link-button,
@@ -188,13 +192,14 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: fit-content;
-  min-width: 180px;
-  padding: 11px 14px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 12px;
   border-radius: 999px;
   text-decoration: none;
   font-weight: 700;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .link-button {
