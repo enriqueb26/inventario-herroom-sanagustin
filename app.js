@@ -334,7 +334,7 @@ function renderCatalog() {
           <td>${item.sku}</td>
           <td>${item.name}</td>
           <td>${item.category || "Sin categoría"}</td>
-          <td>${item.unit}</td>
+          <td>${formatUnit(item.unit)}</td>
           <td>${item.minimumStock}</td>
           <td>
             <div class="row-actions">
@@ -402,9 +402,9 @@ function renderInventory() {
           <td>${item.sku}</td>
           <td>
             <strong>${item.name}</strong><br />
-            <span>${item.category || "Sin categoría"} · ${item.unit}</span>
+            <span>${item.category || "Sin categoría"} · ${formatUnit(item.unit)}</span>
           </td>
-          <td>${stock} ${item.unit}</td>
+          <td>${stock} ${formatUnit(item.unit)}</td>
           <td>${lastPurchase ? formatDate(lastPurchase.purchasedAt) : "Sin compras"}</td>
           <td>${averageDuration}</td>
           <td>${exhaustedOn ? formatDate(exhaustedOn) : "Con existencias"}</td>
@@ -672,6 +672,7 @@ async function importItemsFromCsv(rows) {
     const minimumStock = Number.parseInt(getRequiredValue(record.stock_minimo, "stock_minimo", index), 10);
 
     validateCategory(category, index);
+    validateUnit(unit, index);
     if (Number.isNaN(minimumStock) || minimumStock < 0) {
       throw new Error(`Fila ${index + 2}: stock_minimo debe ser un numero mayor o igual a 0.`);
     }
@@ -877,6 +878,13 @@ function validateCategory(category, index) {
   }
 }
 
+function validateUnit(unit, index) {
+  const units = ["Kilogramo", "Litro", "Pieza"];
+  if (!units.includes(unit)) {
+    throw new Error(`Fila ${index + 2}: unidad debe ser Kilogramo, Litro o Pieza.`);
+  }
+}
+
 function validateDate(value, fieldName, index) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new Error(`Fila ${index + 2}: ${fieldName} debe tener formato AAAA-MM-DD.`);
@@ -937,6 +945,16 @@ function formatCurrency(value) {
     style: "currency",
     currency: "MXN",
   }).format(value);
+}
+
+function formatUnit(unit) {
+  const unitMap = {
+    Kilogramo: "kg",
+    Litro: "L",
+    Pieza: "pz",
+  };
+
+  return unitMap[unit] || unit;
 }
 
 function setTodayDefault(input) {
