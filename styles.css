@@ -40,9 +40,54 @@ select {
   padding: 32px 0 56px;
 }
 
+.app-shell.mobile-preview {
+  width: min(430px, calc(100% - 20px));
+  padding: 18px 0 32px;
+}
+
+.app-shell.mobile-preview .layout {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.app-shell.mobile-preview .panel {
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.app-shell.mobile-preview th,
+.app-shell.mobile-preview td {
+  padding: 10px 8px;
+  font-size: 0.86rem;
+}
+
+.app-shell.mobile-preview .import-grid {
+  grid-template-columns: 1fr;
+}
+
+.app-shell.mobile-preview .hero-top {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.app-shell.mobile-preview .view-switch {
+  width: 100%;
+}
+
+.app-shell.mobile-preview .view-button {
+  flex: 1 1 0;
+}
+
 .hero {
   display: block;
   margin-bottom: 28px;
+}
+
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .hero h1,
@@ -65,6 +110,30 @@ select {
   font-size: 0.75rem;
   color: var(--accent-deep);
   font-weight: 700;
+}
+
+.view-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.85);
+  border: 1px solid var(--line);
+}
+
+.view-button {
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.view-button.is-active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(143, 71, 41, 0.18);
 }
 
 .hero-copy {
@@ -361,5 +430,18 @@ td {
 
   .import-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .view-switch {
+    width: 100%;
+  }
+
+  .view-button {
+    flex: 1 1 0;
   }
 }

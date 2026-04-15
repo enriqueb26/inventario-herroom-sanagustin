@@ -17,6 +17,8 @@ const skuFormTitle = document.querySelector("#sku-form-title");
 const skuSubmitButton = document.querySelector("#sku-submit-button");
 const skuCancelButton = document.querySelector("#sku-cancel-button");
 const resetDataButton = document.querySelector("#reset-data-button");
+const desktopViewButton = document.querySelector("#desktop-view-button");
+const mobileViewButton = document.querySelector("#mobile-view-button");
 const importSkusInput = document.querySelector("#import-skus-input");
 const importPurchasesInput = document.querySelector("#import-purchases-input");
 const importUsagesInput = document.querySelector("#import-usages-input");
@@ -28,6 +30,7 @@ const catalogBody = document.querySelector("#catalog-body");
 const inventoryBody = document.querySelector("#inventory-body");
 const purchasesBody = document.querySelector("#purchases-body");
 const usageBody = document.querySelector("#usage-body");
+const appShell = document.querySelector(".app-shell");
 
 const supabaseConfig = window.SUPABASE_CONFIG || {};
 const supabaseClient = createSupabaseClient();
@@ -36,6 +39,7 @@ setTodayDefault(purchaseForm.elements.purchasedAt);
 setTodayDefault(usageForm.elements.usedAt);
 resetSkuForm();
 bindEvents();
+applyViewMode("desktop");
 initializeApp();
 
 function bindEvents() {
@@ -170,6 +174,14 @@ function bindEvents() {
 
   resetDataButton.addEventListener("click", async () => {
     await resetAllData();
+  });
+
+  desktopViewButton.addEventListener("click", () => {
+    applyViewMode("desktop");
+  });
+
+  mobileViewButton.addEventListener("click", () => {
+    applyViewMode("mobile");
   });
 
   importSkusInput.addEventListener("change", async (event) => {
@@ -971,4 +983,11 @@ async function runQuery(query, fallbackMessage) {
   }
 
   return data || [];
+}
+
+function applyViewMode(mode) {
+  const isMobile = mode === "mobile";
+  appShell.classList.toggle("mobile-preview", isMobile);
+  desktopViewButton.classList.toggle("is-active", !isMobile);
+  mobileViewButton.classList.toggle("is-active", isMobile);
 }
