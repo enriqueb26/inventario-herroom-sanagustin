@@ -19,6 +19,8 @@ const skuCancelButton = document.querySelector("#sku-cancel-button");
 const resetDataButton = document.querySelector("#reset-data-button");
 const desktopViewButton = document.querySelector("#desktop-view-button");
 const mobileViewButton = document.querySelector("#mobile-view-button");
+const operationsPageLink = document.querySelector("#operations-page-link");
+const catalogPageLink = document.querySelector("#catalog-page-link");
 const importSkusInput = document.querySelector("#import-skus-input");
 const importPurchasesInput = document.querySelector("#import-purchases-input");
 const importUsagesInput = document.querySelector("#import-usages-input");
@@ -31,6 +33,7 @@ const inventoryBody = document.querySelector("#inventory-body");
 const purchasesBody = document.querySelector("#purchases-body");
 const usageBody = document.querySelector("#usage-body");
 const appShell = document.querySelector(".app-shell");
+const pageSections = document.querySelectorAll(".page-section");
 
 const supabaseConfig = window.SUPABASE_CONFIG || {};
 const supabaseClient = createSupabaseClient();
@@ -40,6 +43,7 @@ setTodayDefault(usageForm.elements.usedAt);
 resetSkuForm();
 bindEvents();
 applyViewMode("desktop");
+applyPageMode();
 initializeApp();
 
 function bindEvents() {
@@ -327,7 +331,7 @@ function renderCatalog() {
     return;
   }
 
-  catalogBody.innerHTML = state.items
+  catalogBody.innerHTML = getItemsSortedBySku()
     .map(
       (item) => `
         <tr>
@@ -353,7 +357,7 @@ function renderCatalog() {
 }
 
 function renderSelectOptions() {
-  const options = state.items
+  const options = getItemsSortedBySku()
     .map((item) => `<option value="${item.id}">${item.sku} · ${item.name}</option>`)
     .join("");
 
@@ -389,7 +393,7 @@ function renderInventory() {
     return;
   }
 
-  inventoryBody.innerHTML = state.items
+  inventoryBody.innerHTML = getItemsSortedBySku()
     .map((item) => {
       const stock = getStockForItem(item.id);
       const lastPurchase = state.purchases.find((purchase) => purchase.itemId === item.id);
@@ -417,7 +421,7 @@ function renderInventory() {
 
 function renderPurchases() {
   if (!state.purchases.length) {
-    purchasesBody.innerHTML = emptyRow(5);
+    purchasesBody.innerHTML = emptyRow(6);
     return;
   }
 
@@ -428,6 +432,7 @@ function renderPurchases() {
         <tr>
           <td>${formatDate(purchase.purchasedAt)}</td>
           <td>${item ? item.sku : "SKU eliminado"}</td>
+          <td>${item ? item.name : "Insumo eliminado"}</td>
           <td>${purchase.quantity}</td>
           <td>${purchase.supplier || "Sin proveedor"}</td>
           <td>${purchase.cost ? formatCurrency(purchase.cost) : "Sin costo"}</td>
@@ -913,7 +918,7 @@ function getNextSku() {
 
 function getNextSkuNumber() {
   const highestSku = state.items.reduce((highest, item) => {
-    const numericPart = Number.parseInt(String(item.sku).replace(/\D/g, ""), 10);
+    const numericPart = getSkuNumber(item.sku);
     if (Number.isNaN(numericPart)) {
       return highest;
     }
@@ -922,6 +927,14 @@ function getNextSkuNumber() {
   }, 0);
 
   return highestSku + 1;
+}
+
+function getSkuNumber(sku) {
+  return Number.parseInt(String(sku).replace(/\D/g, ""), 10);
+}
+
+function getItemsSortedBySku() {
+  return [...state.items].sort((left, right) => getSkuNumber(left.sku) - getSkuNumber(right.sku));
 }
 
 function metricCard(value, label) {
@@ -1008,4 +1021,16 @@ function applyViewMode(mode) {
   appShell.classList.toggle("mobile-preview", isMobile);
   desktopViewButton.classList.toggle("is-active", !isMobile);
   mobileViewButton.classList.toggle("is-active", isMobile);
+}
+
+function applyPageMode() {
+  const params = new URLSearchParams(window.location.search);
+  const currentPage = params.get("page") === "catalogo" ? "catalogo" : "operacion";
+
+  pageSections.forEach((section) => {
+    section.classList.toggle("is-hidden", section.dataset.page !== currentPage);
+  });
+
+  operationsPageLink.classList.toggle("is-active", currentPage === "operacion");
+  catalogPageLink.classList.toggle("is-active", currentPage === "catalogo");
 }

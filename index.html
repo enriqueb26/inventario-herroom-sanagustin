@@ -16,7 +16,17 @@
     <div class="app-shell">
       <header class="hero">
         <div class="hero-top">
-          <p class="eyebrow">Inventario Her Room San Agustín</p>
+          <div class="hero-title-block">
+            <p class="eyebrow">Inventario Her Room San Agustín</p>
+            <nav class="page-switch" aria-label="Secciones de la app">
+              <a href="./index.html?page=operacion" id="operations-page-link" class="page-link is-active">
+                Operación
+              </a>
+              <a href="./index.html?page=catalogo" id="catalog-page-link" class="page-link">
+                Catálogo
+              </a>
+            </nav>
+          </div>
           <div class="view-switch" role="group" aria-label="Modo de visualización">
             <button type="button" id="desktop-view-button" class="view-button is-active">
               Versión PC
@@ -33,7 +43,140 @@
       </section>
 
       <main class="layout">
-        <section class="panel">
+        <section class="panel page-section" data-page="operacion">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Movimientos</p>
+              <h2>Registrar compra</h2>
+            </div>
+          </div>
+
+          <form id="purchase-form" class="stack-form">
+            <label>
+              SKU
+              <select name="itemId" required></select>
+            </label>
+            <label>
+              Cantidad comprada
+              <input name="quantity" type="number" min="1" step="1" required />
+            </label>
+            <label>
+              Fecha de compra
+              <input name="purchasedAt" type="date" required />
+            </label>
+            <label>
+              Proveedor
+              <input name="supplier" type="text" placeholder="Opcional" />
+            </label>
+            <label>
+              Costo total
+              <input name="cost" type="number" min="0" step="0.01" placeholder="Opcional" />
+            </label>
+            <button type="submit">Guardar compra</button>
+          </form>
+        </section>
+
+        <section class="panel page-section" data-page="operacion">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Consumo</p>
+              <h2>Registrar salida o agotado</h2>
+            </div>
+          </div>
+
+          <form id="usage-form" class="stack-form">
+            <label>
+              SKU
+              <select name="itemId" required></select>
+            </label>
+            <label>
+              Cantidad usada
+              <input name="quantity" type="number" min="1" step="1" required />
+            </label>
+            <label>
+              Fecha de uso
+              <input name="usedAt" type="date" required />
+            </label>
+            <label>
+              Nota
+              <input name="note" type="text" placeholder="Ej. Producción del lunes" />
+            </label>
+            <button type="submit">Guardar salida</button>
+          </form>
+        </section>
+
+        <section class="panel panel-wide page-section" data-page="operacion">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Estado actual</p>
+              <h2>Inventario</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Insumo</th>
+                  <th>Stock</th>
+                  <th>Comprado por última vez</th>
+                  <th>Promedio de duración</th>
+                  <th>Agotado</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-wide page-section" data-page="operacion">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Historial</p>
+              <h2>Compras registradas</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>SKU</th>
+                  <th>Insumo</th>
+                  <th>Cantidad</th>
+                  <th>Proveedor</th>
+                  <th>Costo</th>
+                </tr>
+              </thead>
+              <tbody id="purchases-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-wide page-section" data-page="operacion">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Historial</p>
+              <h2>Salidas registradas</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>SKU</th>
+                  <th>Cantidad</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody id="usage-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-wide page-section" data-page="catalogo">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Catálogo</p>
@@ -86,69 +229,7 @@
           </form>
         </section>
 
-        <section class="panel">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Movimientos</p>
-              <h2>Registrar compra</h2>
-            </div>
-          </div>
-
-          <form id="purchase-form" class="stack-form">
-            <label>
-              SKU
-              <select name="itemId" required></select>
-            </label>
-            <label>
-              Cantidad comprada
-              <input name="quantity" type="number" min="1" step="1" required />
-            </label>
-            <label>
-              Fecha de compra
-              <input name="purchasedAt" type="date" required />
-            </label>
-            <label>
-              Proveedor
-              <input name="supplier" type="text" placeholder="Opcional" />
-            </label>
-            <label>
-              Costo total
-              <input name="cost" type="number" min="0" step="0.01" placeholder="Opcional" />
-            </label>
-            <button type="submit">Guardar compra</button>
-          </form>
-        </section>
-
-        <section class="panel">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Consumo</p>
-              <h2>Registrar salida o agotado</h2>
-            </div>
-          </div>
-
-          <form id="usage-form" class="stack-form">
-            <label>
-              SKU
-              <select name="itemId" required></select>
-            </label>
-            <label>
-              Cantidad usada
-              <input name="quantity" type="number" min="1" step="1" required />
-            </label>
-            <label>
-              Fecha de uso
-              <input name="usedAt" type="date" required />
-            </label>
-            <label>
-              Nota
-              <input name="note" type="text" placeholder="Ej. Producción del lunes" />
-            </label>
-            <button type="submit">Guardar salida</button>
-          </form>
-        </section>
-
-        <section class="panel panel-wide">
+        <section class="panel panel-wide page-section" data-page="catalogo">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Catálogo</p>
@@ -172,77 +253,7 @@
           </div>
         </section>
 
-        <section class="panel panel-wide">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Estado actual</p>
-              <h2>Inventario</h2>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Insumo</th>
-                  <th>Stock</th>
-                  <th>Comprado por última vez</th>
-                  <th>Promedio de duración</th>
-                  <th>Agotado</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody id="inventory-body"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="panel panel-wide">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Historial</p>
-              <h2>Compras registradas</h2>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>SKU</th>
-                  <th>Cantidad</th>
-                  <th>Proveedor</th>
-                  <th>Costo</th>
-                </tr>
-              </thead>
-              <tbody id="purchases-body"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="panel panel-wide">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Historial</p>
-              <h2>Salidas registradas</h2>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>SKU</th>
-                  <th>Cantidad</th>
-                  <th>Nota</th>
-                </tr>
-              </thead>
-              <tbody id="usage-body"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="panel panel-wide">
+        <section class="panel panel-wide page-section" data-page="operacion">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Importación</p>
